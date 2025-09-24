@@ -1,0 +1,304 @@
+import React, { useState, useEffect, useMemo, useContext } from 'react';
+import { collection, query, onSnapshot } from 'firebase/firestore';
+import { ResponsiveContainer, LineChart, BarChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area } from 'recharts';
+import { Loader2, Droplet, Utensils, Flame, HeartPulse, Lightbulb, TrendingUp, Calendar, Activity, BarChart2 } from 'lucide-react';
+
+// Define AppContext to be used by the Dashboard and provided by a parent component.
+const AppContext = React.createContext();
+
+// This is a placeholder AppProvider. In your actual application, you would have a
+// real provider that initializes Firebase and passes the db, userId, and auth state.
+const AppProvider = ({ children }) => {
+    const [appState] = useState({
+        // In your real app, 'db' would be initialized from your Firebase config.
+        // For demonstration, we'll leave it as null so the component shows its loading state
+        // or a message if it cannot connect, which is what would happen if Firebase isn't configured.
+        db: null, // Replace with your actual getFirestore() instance
+        userId: 'test-user-123', // Replace with the actual authenticated user's ID
+        isAuthenticated: true, // Replace with actual authentication state
+    });
+
+    return (
+        <AppContext.Provider value={appState}>
+            {children}
+        </AppContext.Provider>
+    );
+};
+
+
+const StatCard = ({ title, value, unit, icon, color }) => {
+    const colorVariants = {
+        blue: 'from-blue-500 to-blue-400',
+        orange: 'from-orange-500 to-orange-400',
+        red: 'from-red-500 to-red-400',
+        purple: 'from-purple-500 to-purple-400',
+    };
+
+    return (
+        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/20 transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-gray-500 font-medium">{title}</p>
+                    <p className="text-3xl font-bold text-gray-800">
+                        {value}
+                        <span className="text-lg ml-1 font-normal text-gray-600">{unit}</span>
+                    </p>
+                </div>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br ${colorVariants[color]}`}>
+                    {icon}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-gray-200">
+                <p className="font-bold text-gray-800">{`Date: ${label}`}</p>
+                {payload.map((pld, index) => (
+                    <div key={index} style={{ color: pld.color }}>
+                        <p>{`${pld.name}: ${pld.value}`}</p>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
+const Dashboard = () => {
+    const { db, userId, isAuthenticated } = useContext(AppContext);
+    const [allEntries, setAllEntries] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeChart, setActiveChart] = useState('glucose');
+
+    const today = new Date();
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 7);
+
+    const [dateRange, setDateRange] = useState({
+        start: lastWeek.toISOString().split('T')[0],
+        end: today.toISOString().split('T')[0],
+    });
+
+    useEffect(() => {
+        if (!db || !userId || !isAuthenticated) {
+            setLoading(false);
+            console.log("Firebase not configured or user not authenticated.");
+            return;
+        }
+
+        setLoading(true);
+        const paths = {
+            glucose: `users/${userId}/glucoseReadings`,
+            food: `users/${userId}/foodEntries`,
+            exercise: `users/${userId}/exerciseEntries`,
+        };
+
+        const unsubs = Object.keys(paths).map(type => {
+            try {
+                const q = query(collection(db, paths[type]));
+                return onSnapshot(q, (snapshot) => {
+                    const entries = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, type }));
+                    setAllEntries(prev => {
+                        const otherEntries = prev.filter(entry => entry.type !== type);
+                        return [...otherEntries, ...entries];
+                    });
+                    setLoading(false);
+                }, (error) => {
+                    console.error(`Error fetching ${type} data:`, error);
+                    setLoading(false);
+                });
+            } catch (error) {
+                 console.error(`Failed to create listener for ${type}:`, error);
+                 setLoading(false);
+                 return () => {};
+            }
+        });
+        
+        return () => unsubs.forEach(unsub => unsub && unsub());
+    }, [db, userId, isAuthenticated]);
+
+    const processedData = useMemo(() => {
+        if (allEntries.length === 0) return { latestGlucose: null, todayCarbs: 0, todayCalories: 0, todayExercise: 0, chartData: [] };
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        const glucoseReadings = allEntries
+            .filter(e => e.type === 'glucose')
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const latestGlucose = glucoseReadings.length > 0 ? glucoseReadings[0].value : null;
+
+        const todaysFood = allEntries.filter(e => e.type === 'food' && e.date === todayStr);
+        const todayCarbs = todaysFood.reduce((sum, item) => sum + (parseFloat(item.carbohydrates) || 0), 0);
+        const todayCalories = todaysFood.reduce((sum, item) => sum + (parseFloat(item.calories) || 0), 0);
+        const todayExercise = allEntries
+            .filter(e => e.type === 'exercise' && e.date === todayStr)
+            .reduce((sum, item) => sum + (parseFloat(item.duration) || 0), 0);
+
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+
+        const dailyData = {};
+        allEntries.forEach(entry => {
+            if (entry.date) {
+                const entryDate = new Date(entry.date);
+                 if (entryDate >= startDate && entryDate <= endDate) {
+                    const dateStr = entry.date;
+                    if (!dailyData[dateStr]) {
+                        dailyData[dateStr] = { glucoseSum: 0, glucoseCount: 0, carbs: 0, calories: 0, exercise: 0 };
+                    }
+                    if (entry.type === 'glucose') {
+                        dailyData[dateStr].glucoseSum += parseFloat(entry.value) || 0;
+                        dailyData[dateStr].glucoseCount++;
+                    }
+                    if (entry.type === 'food') {
+                        dailyData[dateStr].carbs += parseFloat(entry.carbohydrates) || 0;
+                        dailyData[dateStr].calories += parseFloat(entry.calories) || 0;
+                    }
+                    if (entry.type === 'exercise') {
+                        dailyData[dateStr].exercise += parseFloat(entry.duration) || 0;
+                    }
+                }
+            }
+        });
+
+        const chartData = Object.keys(dailyData).map(date => ({
+            date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            fullDate: date,
+            glucose: dailyData[date].glucoseCount > 0 ? parseFloat((dailyData[date].glucoseSum / dailyData[date].glucoseCount).toFixed(1)) : null,
+            carbs: parseFloat(dailyData[date].carbs.toFixed(1)),
+            calories: parseFloat(dailyData[date].calories.toFixed(1)),
+            exercise: parseFloat(dailyData[date].exercise.toFixed(0)),
+        })).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+        
+        return { latestGlucose, todayCarbs, todayCalories, todayExercise, chartData };
+    }, [allEntries, dateRange]);
+    
+    const dailyTips = [
+        "Stay hydrated! Drinking water helps your body manage blood sugar.",
+        "A brisk 15-min walk after a meal can significantly lower post-meal glucose.",
+        "Aim for balanced meals with protein, healthy fats, and fiber.",
+        "Consistent sleep is key. Poor sleep can increase insulin resistance.",
+        "Check your feet daily for any cuts or sores, as diabetes can affect healing."
+    ];
+    const tip = useMemo(() => dailyTips[new Date().getDate() % dailyTips.length], []);
+
+    const chartConfig = {
+        glucose: { name: "Avg. Glucose", unit: "mg/dL", color: "#3b82f6", icon: <TrendingUp className="w-5 h-5 mr-2" /> },
+        carbs: { name: "Total Carbs", unit: "g", color: "#f97316", icon: <Utensils className="w-5 h-5 mr-2" /> },
+        calories: { name: "Total Calories", unit: "kcal", color: "#ef4444", icon: <Flame className="w-5 h-5 mr-2" /> },
+        exercise: { name: "Exercise Duration", unit: "min", color: "#8b5cf6", icon: <Activity className="w-5 h-5 mr-2" /> }
+    };
+
+    const renderChart = () => {
+        if (processedData.chartData.length === 0) {
+            return <div className="text-center py-20 text-gray-500">No data available for the selected range.</div>;
+        }
+        switch (activeChart) {
+            case 'glucose':
+                return <LineChart data={processedData.chartData}><defs><linearGradient id="colorGlucose" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" /><XAxis dataKey="date" stroke="#9ca3af" /><YAxis stroke="#9ca3af" label={{ value: 'mg/dL', angle: -90, position: 'insideLeft', fill: '#6b7280' }} /><Tooltip content={<CustomTooltip />} /><Legend /><Line type="monotone" dataKey="glucose" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }} name="Avg. Glucose" /><Area type="monotone" dataKey="glucose" stroke={false} fill="url(#colorGlucose)" /></LineChart>;
+            case 'carbs':
+                return <BarChart data={processedData.chartData}><defs><linearGradient id="colorCarbs" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/><stop offset="95%" stopColor="#f97316" stopOpacity={0.2}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" /><XAxis dataKey="date" stroke="#9ca3af" /><YAxis stroke="#9ca3af" label={{ value: 'grams', angle: -90, position: 'insideLeft', fill: '#6b7280' }} /><Tooltip content={<CustomTooltip />} /><Legend /><Bar dataKey="carbs" fill="url(#colorCarbs)" name="Total Carbs (g)" /></BarChart>;
+            case 'calories':
+                return <BarChart data={processedData.chartData}><defs><linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/><stop offset="95%" stopColor="#ef4444" stopOpacity={0.2}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" /><XAxis dataKey="date" stroke="#9ca3af" /><YAxis stroke="#9ca3af" label={{ value: 'kcal', angle: -90, position: 'insideLeft', fill: '#6b7280' }} /><Tooltip content={<CustomTooltip />} /><Legend /><Bar dataKey="calories" fill="url(#colorCalories)" name="Total Calories (kcal)" /></BarChart>;
+            case 'exercise':
+                return <BarChart data={processedData.chartData}><defs><linearGradient id="colorExercise" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/><stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.2}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" /><XAxis dataKey="date" stroke="#9ca3af" /><YAxis stroke="#9ca3af" label={{ value: 'minutes', angle: -90, position: 'insideLeft', fill: '#6b7280' }} /><Tooltip content={<CustomTooltip />} /><Legend /><Bar dataKey="exercise" fill="url(#colorExercise)" name="Duration (min)" /></BarChart>;
+            default: return null;
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-600">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+                <p className="mt-4 text-lg font-medium">Loading Your Dashboard...</p>
+                <p className="text-sm">Crunching the latest numbers!</p>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <style>{`
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-fadeInUp { animation: fadeInUp 0.5s ease-out forwards; }
+                @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+                .animate-pulse-icon { animation: pulse 2s infinite ease-in-out; }
+                body {
+                    background-color: #f0f4f8;
+                    background-image: radial-gradient(circle at 1px 1px, #d1d5db 1px, transparent 0), radial-gradient(circle at 15px 15px, #d1d5db 1px, transparent 0);
+                    background-size: 30px 30px;
+                }
+            `}</style>
+            <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans">
+                <div className="max-w-7xl mx-auto space-y-8">
+                    <header style={{ animationDelay: '0.1s' }} className="animate-fadeInUp">
+                        <h1 className="text-4xl font-bold text-gray-800">Your Daily Dashboard</h1>
+                        <p className="text-gray-500 mt-1">A summary of your health today. Welcome back!</p>
+                    </header>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div style={{ animationDelay: '0.2s' }} className="animate-fadeInUp"><StatCard title="Latest Glucose" value={`${processedData.latestGlucose || 'N/A'}`} unit="mg/dL" icon={<Droplet className="w-8 h-8 text-white" />} color="blue" /></div>
+                        <div style={{ animationDelay: '0.3s' }} className="animate-fadeInUp"><StatCard title="Today's Carbs" value={processedData.todayCarbs.toFixed(0)} unit="g" icon={<Utensils className="w-8 h-8 text-white" />} color="orange"/></div>
+                        <div style={{ animationDelay: '0.4s' }} className="animate-fadeInUp"><StatCard title="Today's Calories" value={processedData.todayCalories.toFixed(0)} unit="kcal" icon={<Flame className="w-8 h-8 text-white" />} color="red"/></div>
+                        <div style={{ animationDelay: '0.5s' }} className="animate-fadeInUp"><StatCard title="Today's Exercise" value={processedData.todayExercise.toFixed(0)} unit="mins" icon={<HeartPulse className="w-8 h-8 text-white" />} color="purple"/></div>
+                    </div>
+
+                    <div style={{ animationDelay: '0.6s' }} className="animate-fadeInUp bg-white/70 backdrop-blur-sm border border-white/20 text-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div className="flex items-center">
+                            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                               <Lightbulb className="w-6 h-6 text-yellow-500 animate-pulse-icon" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-yellow-800">Daily Tip</p>
+                                <p className="text-gray-600">{tip}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ animationDelay: '0.7s' }} className="animate-fadeInUp bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg border border-white/20">
+                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-800 flex items-center"><BarChart2 className="mr-3 text-blue-500"/>Health Trends</h3>
+                                <p className="text-gray-500">Visualize your progress over time.</p>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm mt-4 md:mt-0 bg-gray-100 p-2 rounded-lg">
+                                <Calendar className="w-5 h-5 text-gray-500" />
+                                <input type="date" value={dateRange.start} onChange={e => setDateRange(prev => ({...prev, start: e.target.value}))} className="bg-transparent border-none focus:ring-0" />
+                                <span className="text-gray-400">-</span>
+                                <input type="date" value={dateRange.end} onChange={e => setDateRange(prev => ({...prev, end: e.target.value}))} className="bg-transparent border-none focus:ring-0" />
+                            </div>
+                        </div>
+
+                        <div className="border-b border-gray-200">
+                            <nav className="-mb-px flex flex-wrap gap-x-2 sm:gap-x-6" aria-label="Tabs">
+                                {Object.keys(chartConfig).map((key) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setActiveChart(key)}
+                                        className={`${ activeChart === key ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none`}
+                                    >
+                                        {chartConfig[key].icon} {chartConfig[key].name}
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                        
+                        <div className="mt-6">
+                            <ResponsiveContainer width="100%" height={300}>
+                                {renderChart()}
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
+
+
+export default Dashboard;
+

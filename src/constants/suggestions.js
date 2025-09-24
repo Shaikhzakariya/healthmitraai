@@ -1,0 +1,35 @@
+export const allSuggestions = [
+  "What are some healthy fats?",
+  "What can I cook with these ingredients?",
+  "Suggest lightweight nutritious foods for hiking.",
+  "Can I carry this food item on a flight?",
+  "Tell me about the benefits of hydration.",
+  "Suggest a quick, protein-rich snack.",
+  "How can I get more fiber?",
+  "Are these ingredients healthy?",
+  "Give me a simple recipe for a nutritious smoothie.",
+  "How do I store these leftovers?",
+  "What are some low-calorie snacks?",
+  "What can I make with these fruits?",
+  "How can I build muscle quickly?",
+  "Is this meal balanced?",
+  "What are the benefits of intermittent fasting?",
+  "How ripe is this fruit?",
+  "How do I improve my sleep quality?",
+  "Are these veggies fresh?",
+  "Suggest a 10-minute workout routine.",
+  "What's the best way to cut this vegetable?",
+  "What are the best sources of vitamins?",
+  "Identify the ingredients in this dish.",
+  "How can I boost my metabolism?",
+  "What's the calorie count of this meal?",
+  "How do I practice mindfulness?",
+  "Can I freeze this food?",
+  "What's a healthy alternative to soda?",
+  "Suggest a recipe with these ingredients.",
+  "How do I manage stress effectively?",
+  "How do I portion this meal properly?"
+];
+
+export const isSpeechRecognitionSupported = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+export const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

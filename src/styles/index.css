@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.font-inter {
+    font-family: 'Inter', sans-serif;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #8B5CF6, #EC4899);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #9F7AEA, #F472B6);
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar {
+    height: 8px;
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb {
+    background: linear-gradient(to right, #8B5CF6, #EC4899);
+    border-radius: 10px;
+}
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to right, #9F7AEA, #F472B6);
+}
+
+@keyframes pulse-slow {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.01);
+    }
+}
+.animate-pulse-slow {
+    animation: pulse-slow 4s infinite ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(-25%);
+        animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+        transform: translateY(0);
+        animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+}
+.animate-bounce {
+    animation: bounce 1s infinite;
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
+    50% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.4); }
+    100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
+}
+
+@keyframes flicker {
+    0%, 100% { text-shadow: 0 0 5px #00f2f2, 0 0 10px #00f2f2, 0 0 20px rgba(0, 255, 255, 0.5); opacity: 1; }
+    50% { text-shadow: none; opacity: 0.8; }
+}
+
+@keyframes bar-animation {
+    0% { transform: scaleY(0.1); }
+    50% { transform: scaleY(1); }
+    100% { transform: scaleY(0.3); }
+}
+
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.group:hover .group-hover\:animate-spin-slow {
+    animation: spin-slow 2s linear infinite;
+}
+
+/* Custom CSS to override prose padding for bot messages */
+.bot-prose p,
+.bot-prose ul,
+.bot-prose ol,
+.bot-prose li,
+.bot-prose h1,
+.bot-prose h2,
+.bot-prose h3,
+.bot-prose h4,
+.bot-prose h5,
+.bot-prose h6 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
