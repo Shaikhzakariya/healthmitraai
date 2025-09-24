@@ -48,7 +48,7 @@ const FoodLookupPage = ({ onGoBack }) => {
         };
 
         const response = await retryWithExponentialBackoff(async () => {
-          const response = await fetch("/.netlify/functions/generateContent", {
+          const res = await fetch("/.netlify/functions/generateContent", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
