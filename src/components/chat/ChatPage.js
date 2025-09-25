@@ -200,14 +200,7 @@ const ChatPage = ({ messages, input, setInput, isLoading, isListening, handleSen
                             <Image className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                         </label>
 
-                        <button
-                            onClick={toggleSpeechRecognition}
-                            className={`p-2 sm:p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isListening ? 'bg-red-600' : 'bg-gray-700'}`}
-                            disabled={isLoading}
-                            title={isListening ? "Stop listening" : "Start voice input"}
-                        >
-                            <Mic className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                        </button>
+                      
                         <button
                             onClick={() => handleSendMessage()}
                             className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-2 sm:p-3 rounded-full shadow-lg hover:from-purple-700 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
