@@ -343,6 +343,27 @@ const ImageAnalysisHistory = ({ showCustomModal }) => {
           </div>
 
           <div>
+            <h4 className="text-sm font-medium mb-2">Carbs per Food Item</h4>
+            <div style={{ width: "100%", height: 240 }}>
+              {barDatacarbs && barDatacarbs.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barDatacarbs} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" hide />
+                    <YAxis />
+                    <ReTooltip />
+                    <Bar dataKey="carbs" fill={COLORS[3]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-gray-500">No per-item carbs data available.</p>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* <-- New: Add bar + line charts here for carbs per food and trend --> */}
+        <div className="mt-6 grid md:grid-cols-2 gap-6">
+                  <div>
             <h4 className="text-sm font-medium mb-2">Calories Trend (by day)</h4>
             <div style={{ width: "100%", height: 240 }}>
               {lineData && lineData.length > 0 ? (
@@ -361,27 +382,7 @@ const ImageAnalysisHistory = ({ showCustomModal }) => {
               )}
             </div>
           </div>
-        </div>
-        {/* <-- New: Add bar + line charts here for carbs per food and trend --> */}
-        <div className="mt-6 grid md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-sm font-medium mb-2">Carbs per Food Item</h4>
-            <div style={{ width: "100%", height: 240 }}>
-              {barDatacarbs && barDatacarbs.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barDatacarbs} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" hide />
-                    <YAxis />
-                    <ReTooltip />
-                    <Bar dataKey="carbs" fill={COLORS[3]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-sm text-gray-500">No per-item carbs data available.</p>
-              )}
-            </div>
-          </div>
+
 
           <div>
             <h4 className="text-sm font-medium mb-2">Carbs Trend (by day)</h4>

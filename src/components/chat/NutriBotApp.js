@@ -466,7 +466,7 @@ function NutriBotApp({ isAuthenticated, userId }) {
     };
 
     return (
-        <div className=" bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex justify-center p-2 md:p-4 font-inter text-white">
+        <div className=" bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex justify-center p-1 md:p-1 font-inter text-white">
             <div className="relative w-full max-w-6xl h-[90vh] md:h-[92vh] bg-gray-800 bg-opacity-70 backdrop-filter backdrop-blur-lg  shadow-2xl overflow-hidden border border-purple-700/50 flex flex-col md:flex-row">
                 {showProfileModal && <ProfileModal onSubmit={saveUserProfile} onClose={() => setShowProfileModal(false)} userProfile={userProfile} />}
 
@@ -501,10 +501,10 @@ function NutriBotApp({ isAuthenticated, userId }) {
                     />
                 )}
 
-                <div className="flex-grow flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-gray-800 p-2">
-                    <div className="p-2 md:p-4 border-b border-purple-700/50 flex items-center justify-between">
+                <div className="flex-grow flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-gray-800">
+                    <div className="p-2 md:p-1 border-b border-purple-700/50 flex items-center justify-between">
                         
-                        <div className="flex items-center space-x-2 md:space-x-4">
+                        <div className="flex flex-wrap items-center space-x-2 md:space-x-4">
                             {userId && (
                                 <span className="hidden md:inline text-purple-300 text-xs px-2 py-1 bg-gray-700 rounded-full">
                                     ID: {userId}
